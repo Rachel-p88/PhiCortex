@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PhiCortex - Phishing Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        linear-gradient(135deg, #ffe4ec, #e0f2ff);
+      --surface:   rgba(255, 255, 255, 0.85);
+      --border:    #f1f5f9;
+
+      --accent:    #ff2d55;
+      --accent2:   #ff6b6b;
+
+      --danger:    #ff2d55;
+      --safe:      #22c55e;
+
+      --text:      #1e293b;
+      --muted:     #64748b;
+
+      --glow-a:    rgba(255, 45, 85, 0.2);
+      --glow-d:    rgba(255, 45, 85, 0.25);
+      --glow-s:    rgba(34, 197, 94, 0.2);
+}
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: linear-gradient(135deg, #f43f5e, #ffe4ec, #3b82f6);
+      color: var(--text);
+      font-family: 'Chakra Petch', sans-serif;
+
+      min-height: 100vh;
+      margin: 0;
+
+      display: flex;
+      justify-content: center;   /* center horizontally */
+      align-items: center;       /* center vertically */
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255,45,85,0.08), transparent 40%),
+                  radial-gradient(circle at bottom left, rgba(59,130,246,0.08), transparent 40%);
+      pointer-events: none;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    header {
+      text-align: center;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+    }
+
+    h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #ff2d55;
+    }
+
+    h1 span {
+      color: #1e293b;
+      text-shadow: 0 2px 10px rgba(255, 45, 85, 0.25);
+    }
+
+    .tagline {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(14px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .card.danger-glow { border-color: var(--danger); box-shadow: 0 0 40px var(--glow-d); }
+    .card.safe-glow   { border-color: var(--safe);   box-shadow: 0 0 40px var(--glow-s); }
+
+    .input-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.75rem;
+      width: 100%;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: #ffffff; 
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      color: #1e293b;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.95rem;
+      padding: 0.85rem 1.1rem;
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #ff2d55;
+      box-shadow: 0 4px 12px rgba(255, 45, 85, 0.15);
+    }
+
+    input[type="text"]::placeholder { color: var(--muted); }
+
+    button#scanBtn {
+      background: linear-gradient(135deg, #ff2d55, #ff6b6b);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.95rem 1.6rem;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      font-family: 'Chakra Petch', sans-serif;
+      box-shadow: 0 8px 20px rgba(255, 45, 85, 0.25);
+      transition: all 0.25s ease;
+    }
+
+    button#scanBtn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 12px 25px rgba(255, 45, 85, 0.35);
+    }
+    button#scanBtn:active {
+      transform: scale(0.98);
+    }
+    button#scanBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #result {
+      display: none;
+      margin-top: 1.8rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.8rem;
+      animation: fadeUp 0.4s ease both;
+      background: rgba(255, 255, 255, 0.4);
+      padding: 1rem;
+      border-radius: 12px;
+    }
+
+    .verdict-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .verdict-icon {
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    .verdict-label {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .verdict-label.phishing  { color: #e11d48; }
+    .verdict-label.legitimate { color: #16a34a; }
+
+    .verdict-url {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      word-break: break-all;
+      margin-top: 0.2rem;
+    }
+
+    .risk-section { margin-bottom: 1.2rem; }
+
+    .risk-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.5rem;
+    }
+
+    .risk-title {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #475569
+    }
+
+    .risk-pct {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .bar-track {
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      width: 0%;
+      transition: width 1s cubic-bezier(.4,0,.2,1);
+    }
+
+    .bar-fill.phishing {
+      background: linear-gradient(90deg, #ff2d55, #ff6b6b);
+    }
+
+    .bar-fill.legitimate {
+      background: linear-gradient(90deg, #22c55e, #86efac);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .stat-box {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+    }
+
+    .stat-box-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+
+    .stat-box-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1e293b;;
+    }
+
+    .loader {
+      display: none;
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+
+    .loader-dots {
+      display: inline-flex;
+      gap: 6px;
+    }
+
+    .loader-dots span {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: bounce 1s infinite;
+    }
+
+    .loader-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .loader-dots span:nth-child(3) { animation-delay: 0.30s; }
+
+    .loader-text {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-top: 0.6rem;
+    }
+
+    .error-msg {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+
+      background: rgba(255, 45, 85, 0.08);
+      border: 1px solid rgba(255, 45, 85, 0.3);
+      border-radius: 10px;
+
+      font-size: 0.8rem;
+      font-family: 'Share Tech Mono', monospace;
+      color: #ff2d55;
+    }
+
+    footer {
+      text-align: center;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      animation: fadeUp 0.7s ease 0.3s both;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-6px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <header>
+      <div class="logo-row">
+        <!-- Shield SVG icon -->
+        <svg class="logo-icon" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="shieldGrad" x1="0" y1="0" x2="44" y2="44">
+              <stop offset="0%" stop-color="#ff2d55"/>
+              <stop offset="100%" stop-color="#3b82f6"/>
+            </linearGradient>
+          </defs>
+          
+          <path d="M22 3L6 9v11c0 9.4 6.8 18.2 16 20.4C31.2 38.2 38 29.4 38 20V9L22 3z"
+            fill="url(#shieldGrad)"
+            fill-opacity="0.2"
+            stroke="#ff2d55"
+            stroke-width="1.5"/>
+
+          <path d="M15 22l5 5 9-10"
+            stroke="#ff2d55"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"/>
+        </svg>
+        <h1>Phi<span>Cortex</span></h1>
+      </div>
+      <p class="tagline">Intelligent Phishing Website Detection System</p>
+    </header>
+
+    <div class="card" id="mainCard">
+      <label class="input-label" for="urlInput">Enter URL to analyse</label>
+      <div class="input-row">
+        <input type="text" id="urlInput" placeholder="https://example.com" autocomplete="off" spellcheck="false"/>
+        <button id="scanBtn" onclick="scan()">Scan</button>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <div class="loader" id="loader">
+        <div class="loader-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <p class="loader-text">Analysing URL patterns...</p>
+      </div>
+
+      <div id="result">
+        <div class="verdict-row">
+          <div class="verdict-icon" id="verdictIcon"></div>
+          <div>
+            <div class="verdict-label" id="verdictLabel"></div>
+            <div class="verdict-url" id="verdictUrl"></div>
+          </div>
+        </div>
+
+        <div class="risk-section">
+          <div class="risk-header">
+            <span class="risk-title">Risk Score</span>
+            <span class="risk-pct" id="riskPct">0%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" id="barFill"></div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-box-label">Classification</div>
+            <div class="stat-box-value" id="statClass">--</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-label">Confidence</div>
+            <div class="stat-box-value" id="statConf">--</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-label">Model Used</div>
+            <div class="stat-box-value" id="statModel">--</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-label">Model Accuracy</div>
+            <div class="stat-box-value" id="statAccuracy">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      PhiCortex v1.0 &nbsp;|&nbsp; Random Forest Classifier &nbsp;|&nbsp; ~15K training samples
+    </footer>
+
+  </div>
+
+  <script>
+  fetch('/model-info')
+  .then(r => r.json())
+  .then(info => {
+    document.getElementById('statModel').textContent    = info.model_name;
+    document.getElementById('statAccuracy').textContent = info.accuracy + '%';
+  })
+  .catch(() => {
+    document.getElementById('statModel').textContent    = 'Unknown';
+    document.getElementById('statAccuracy').textContent = 'N/A';
+  });
+
+    const urlInput  = document.getElementById('urlInput');
+    const scanBtn   = document.getElementById('scanBtn');
+    const loader    = document.getElementById('loader');
+    const result    = document.getElementById('result');
+    const errorMsg  = document.getElementById('errorMsg');
+    const mainCard  = document.getElementById('mainCard');
+
+    urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') scan(); });
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = 'block';
+    }
+
+    function hideError() {
+      errorMsg.style.display = 'none';
+    }
+
+    async function scan() {
+      const url = urlInput.value.trim();
+      if (!url) { showError('Please enter a URL first.'); return; }
+
+      hideError();
+      result.style.display   = 'none';
+      loader.style.display   = 'block';
+      scanBtn.disabled       = true;
+      mainCard.className     = 'card';
+
+      try {
+        const res  = await fetch('/predict', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ url })
+        });
+
+        const data = await res.json();
+
+        if (data.error) { showError(data.error); return; }
+
+        const isPhishing = !data.safe;
+        const risk       = data.risk_score;
+        const confidence = isPhishing
+          ? risk.toFixed(1) + '%'
+          : (100 - risk).toFixed(1) + '%';
+
+        document.getElementById('verdictIcon').textContent  = isPhishing ? '🚨' : '✅';
+        document.getElementById('verdictLabel').textContent = data.prediction;
+        document.getElementById('verdictLabel').className   = 'verdict-label ' + (isPhishing ? 'phishing' : 'legitimate');
+        document.getElementById('verdictUrl').textContent   = data.url;
+        document.getElementById('riskPct').textContent      = risk + '%';
+        document.getElementById('statClass').textContent    = data.prediction;
+        document.getElementById('statConf').textContent     = confidence;
+
+        const bar = document.getElementById('barFill');
+        bar.className = 'bar-fill ' + (isPhishing ? 'phishing' : 'legitimate');
+
+        result.style.display = 'block';
+        mainCard.className   = 'card ' + (isPhishing ? 'danger-glow' : 'safe-glow');
+
+        setTimeout(() => { bar.style.width = risk + '%'; }, 100);
+
+      } catch (err) {
+        showError('Could not connect to server. Make sure Flask is running.');
+      } finally {
+        loader.style.display = 'none';
+        scanBtn.disabled     = false;
+      }
+    }
+  </script>
+</body>
+</html>
